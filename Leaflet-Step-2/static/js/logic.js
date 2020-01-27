@@ -1,16 +1,20 @@
 // Store API endpoint inside queryUrl
-var queryUrl = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_week.geojson"
+var queryUrlEarthquake = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_week.geojson"
+var queryUrlPlates = "https://raw.githubusercontent.com/fraxen/tectonicplates/master/GeoJSON/PB2002_plates.json"
+
 
 
 // Perform a get request to the query URL
-d3.json(queryUrl).then(function(data){
-    // Once we get a response, send the data.features object to the createFeatures function
-    createFeatures(data.features);
-    console.log(data);
-})
+d3.json(queryUrlEarthquake).then(function(dataE){
+    // When the first API call is complete, perform another call to the tectonic plates 
+    d3.json(queryUrlPlates).then(function(dataP){
 
+    createFeatures(dataE.features, dataP.features);
+    console.log(dataP);
+    })
+})
 //
-function createFeatures(earthquakeData) {
+function createFeatures(earthquakeData, plateData) {
 
     // Define a function we want to run once for each feature in the features array
     // Give each feature a popup describing the place,time, and the magnitude of the earthquake
@@ -59,7 +63,16 @@ function createFeatures(earthquakeData) {
         onEachFeature: onEachFeature
     });
 
-    createMap(earthquakes);
+    var plates = L.geoJSON(plateData, {
+        
+        style: {color: "#DC143C",
+                weight: 2,
+                "opacity": 1
+        }
+        
+    });
+
+    createMap(earthquakes,plates);
 }
 
 // function to change circle color based on earthquake magitude
@@ -73,30 +86,53 @@ function getColor(magnitude) {
   }
   
 
-function createMap(earthquakes) {
+function createMap(earthquakes,plates) {
 
     //Define lightmap layers
-    var lightmap=L.tileLayer("https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}", {
+    var lightmap = L.tileLayer("https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}", {
       attribution: "Map data &copy; <a href=\"https://www.openstreetmap.org/\">OpenStreetMap</a> contributors, <a href=\"https://creativecommons.org/licenses/by-sa/2.0/\">CC-BY-SA</a>, Imagery © <a href=\"https://www.mapbox.com/\">Mapbox</a>",
       maxZoom: 18,
       id: "mapbox.light",
       accessToken: API_KEY
     })
 
-    // var baseMaps = {
-    //     "Light Map": lightmap,
-    //   };
-    // var overlayMaps = {
-    //     Earthquakes: earthquakes
-    //   };
+    var satellitemap = L.tileLayer("https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}", {
+      attribution: "Map data &copy; <a href=\"https://www.openstreetmap.org/\">OpenStreetMap</a> contributors, <a href=\"https://creativecommons.org/licenses/by-sa/2.0/\">CC-BY-SA</a>, Imagery © <a href=\"https://www.mapbox.com/\">Mapbox</a>",
+      maxZoom: 18,
+      id: "mapbox.satellite",
+      accessToken: API_KEY
+    })
+
+    var outdoormap = L.tileLayer("https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}", {
+      attribution: "Map data &copy; <a href=\"https://www.openstreetmap.org/\">OpenStreetMap</a> contributors, <a href=\"https://creativecommons.org/licenses/by-sa/2.0/\">CC-BY-SA</a>, Imagery © <a href=\"https://www.mapbox.com/\">Mapbox</a>",
+      maxZoom: 18,
+      id: "mapbox.outdoors",
+      accessToken: API_KEY
+    })
+
+    
+
+    var baseMaps = {
+        "Satellite": satellitemap,
+        "Grayscale": lightmap,
+        "Outdoors": outdoormap
+      };
+    var overlayMaps = {
+        "Earthquakes": earthquakes,
+        "Fault Lines": plates
+      };
     
     // Create map, giving it the streetmap and earthquakes layers to display on load
     var map = L.map("map", {
         center: [39.09, -95.71],
         zoom: 6,
-        layers: [lightmap,earthquakes]
+        layers: [satellitemap,plates,earthquakes]
     });
     
+    L.control
+        .layers(baseMaps, overlayMaps, {
+            collapsed: true
+        }).addTo(map);
     // add legend
     var legend = L.control({position: 'bottomright'});
       
