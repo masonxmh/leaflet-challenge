@@ -1,6 +1,6 @@
 // Store API endpoint inside queryUrl
 var queryUrlEarthquake = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_week.geojson"
-var queryUrlPlates = "https://raw.githubusercontent.com/fraxen/tectonicplates/master/GeoJSON/PB2002_plates.json"
+var queryUrlPlates = "https://raw.githubusercontent.com/fraxen/tectonicplates/master/GeoJSON/PB2002_boundaries.json"
 
 
 
@@ -65,9 +65,10 @@ function createFeatures(earthquakeData, plateData) {
 
     var plates = L.geoJSON(plateData, {
         
-        style: {color: "#DC143C",
+        style: {color: "#FDA400",
                 weight: 2,
-                "opacity": 1
+                "opacity": 1,
+                fillOpacity: 0.1
         }
         
     });
